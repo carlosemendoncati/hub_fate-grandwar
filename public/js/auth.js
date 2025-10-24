@@ -35,6 +35,11 @@ const playerDatabase = {
 async function saveToBackend(playerData) {
     const playerCode = sessionStorage.getItem('currentUser');
     
+    if (!playerCode) {
+        console.error('❌ Nenhum usuário logado para salvar dados');
+        return false;
+    }
+    
     try {
         const response = await fetch(`${API_BASE}/save-player`, {
             method: 'POST',
@@ -47,36 +52,52 @@ async function saveToBackend(playerData) {
             })
         });
         
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const result = await response.json();
         
         if (result.success) {
             console.log('✅ Dados salvos no MongoDB!');
             return true;
         } else {
-            console.warn('⚠️ Problema ao salvar no servidor');
+            console.warn('⚠️ Problema ao salvar no servidor:', result.error);
             return false;
         }
     } catch (error) {
-        console.warn('🌐 Servidor offline, salvando apenas localmente');
+        console.warn('🌐 Servidor offline, salvando apenas localmente:', error.message);
         return false;
     }
 }
 
 // Função para carregar do backend
 async function loadFromBackend(playerCode) {
+    if (!playerCode) {
+        console.error('❌ Código do jogador não fornecido');
+        return null;
+    }
+    
     try {
-        const response = await fetch(`${API_BASE}/get-player?code=${playerCode}`);
+        const response = await fetch(`${API_BASE}/get-player?code=${encodeURIComponent(playerCode)}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const result = await response.json();
         
         if (result.success && result.data) {
             console.log('✅ Dados carregados do MongoDB!');
             return result.data;
+        } else {
+            console.log('ℹ️ Jogador não encontrado no servidor');
+            return null;
         }
     } catch (error) {
-        console.warn('🌐 Servidor offline, carregando do localStorage');
+        console.warn('🌐 Servidor offline, carregando do localStorage:', error.message);
+        return null;
     }
-    
-    return null;
 }
 
 // Função para testar conexão com o backend
@@ -84,19 +105,60 @@ async function testBackendConnection() {
     try {
         const response = await fetch(`${API_BASE}/get-player?code=FG-8V501Y`);
         if (response.ok) {
+            const result = await response.json();
             console.log('✅ Backend conectado!');
             return true;
+        } else {
+            console.warn('❌ Backend respondeu com erro:', response.status);
+            return false;
         }
     } catch (error) {
         console.warn('❌ Backend offline:', error.message);
+        return false;
     }
-    return false;
 }
+
+// Função para verificar se um código é válido
+function isValidPlayerCode(code) {
+    if (!code || typeof code !== 'string') return false;
+    
+    const normalizedCode = code.trim().toUpperCase();
+    return playerDatabase.hasOwnProperty(normalizedCode);
+}
+
+// Função para obter dados do jogador
+function getPlayerData(code) {
+    if (!isValidPlayerCode(code)) return null;
+    
+    const normalizedCode = code.trim().toUpperCase();
+    return playerDatabase[normalizedCode];
+}
+
+// Sistema de logging melhorado
+const logger = {
+    info: (message) => console.log(`🔐 ${message}`),
+    warn: (message) => console.warn(`⚠️ ${message}`),
+    error: (message) => console.error(`❌ ${message}`),
+    success: (message) => console.log(`✅ ${message}`)
+};
 
 // Exportar para uso em outros arquivos
 window.authSystem = {
     saveToBackend,
     loadFromBackend,
     testBackendConnection,
-    playerDatabase
+    isValidPlayerCode,
+    getPlayerData,
+    playerDatabase,
+    logger
 };
+
+// Inicialização
+console.log('🔐 Sistema de autenticação carregado!');
+console.log(`📋 Jogadores disponíveis: ${Object.keys(playerDatabase).join(', ')}`);
+
+// Teste automático da conexão quando o arquivo carrega
+window.addEventListener('load', async () => {
+    console.log('🔍 Testando conexão com o backend...');
+    await testBackendConnection();
+});
