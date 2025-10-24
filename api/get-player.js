@@ -3,8 +3,15 @@ const { MongoClient } = require('mongodb');
 const uri = process.env.MONGODB_URI;
 
 module.exports = async (req, res) => {
+  // Configura CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
-  
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Método não permitido' });
   }
@@ -13,7 +20,7 @@ module.exports = async (req, res) => {
   
   try {
     const { code } = req.query;
-    
+
     if (!code) {
       return res.status(400).json({ error: 'Código é obrigatório' });
     }
