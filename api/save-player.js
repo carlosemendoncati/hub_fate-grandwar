@@ -1,35 +1,33 @@
-import { MongoClient } from "mongodb";
-
+const { MongoClient } = require('mongodb');
 const uri = process.env.MONGODB_URI;
-const client = new MongoClient(uri);
 
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Método não permitido" });
+module.exports = async (req, res) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Cache-Control', 'no-cache');
+
+  if (req.method !== 'POST') {
+    return res.status(405).json({ success: false, error: 'Método não permitido' });
   }
 
   try {
-    await client.connect();
-    const db = client.db("fate-grandwar");
-    const players = db.collection("players");
-
-    const { id, name, level, score } = req.body;
-
-    if (!id || !name) {
-      return res.status(400).json({ error: "Campos obrigatórios ausentes" });
+    const { playerCode, playerData } = req.body;
+    if (!playerCode || !playerData) {
+      return res.status(400).json({ success: false, error: 'Dados inválidos' });
     }
 
-    const result = await players.updateOne(
-      { id },
-      { $set: { name, level, score, updatedAt: new Date() } },
+    const client = new MongoClient(uri);
+    await client.connect();
+    const db = client.db('fate-war');  // Ajustado para o nome real
+    await db.collection('players').updateOne(
+      { code: playerCode },
+      { $set: { ...playerData, lastUpdated: new Date().toISOString() } },
       { upsert: true }
     );
-
-    res.status(200).json({ message: "Jogador salvo com sucesso!", result });
-  } catch (err) {
-    console.error("Erro ao salvar jogador:", err);
-    res.status(500).json({ error: "Erro interno do servidor" });
-  } finally {
     await client.close();
+
+    res.json({ success: true, message: 'Dados salvos' });
+  } catch (error) {
+    console.error('Erro em save-player:', error.message);
+    res.status(500).json({ success: false, error: 'Erro interno' });
   }
-}
+};
