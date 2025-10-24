@@ -644,6 +644,81 @@
     </div>
 
     <script>
+        // No início do seu <script>, adicione:
+const API_BASE = '/api';
+
+// Função para salvar no backend
+async function saveToBackend(playerData) {
+  const playerCode = sessionStorage.getItem('currentUser');
+  
+  try {
+    const response = await fetch(`${API_BASE}/save-player`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        playerCode: playerCode,
+        playerData: playerData
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      console.log('✅ Dados salvos no servidor!');
+    } else {
+      console.warn('⚠️ Problema ao salvar no servidor');
+      // Continua funcionando com localStorage
+      localStorage.setItem(`playerData_${playerCode}`, JSON.stringify(playerData));
+    }
+  } catch (error) {
+    console.warn('🌐 Servidor offline, salvando apenas localmente');
+    localStorage.setItem(`playerData_${playerCode}`, JSON.stringify(playerData));
+  }
+}
+
+// Função para carregar do backend
+async function loadFromBackend(playerCode) {
+  try {
+    const response = await fetch(`${API_BASE}/get-player?code=${playerCode}`);
+    const result = await response.json();
+    
+    if (result.success && result.data) {
+      console.log('✅ Dados carregados do servidor!');
+      return result.data;
+    }
+  } catch (error) {
+    console.warn('🌐 Servidor offline, carregando do localStorage');
+  }
+  
+  // Fallback para localStorage
+  const localData = localStorage.getItem(`playerData_${playerCode}`);
+  return localData ? JSON.parse(localData) : null;
+}
+
+// Modifique a função de login para carregar do backend
+async function login() {
+  const code = codeInput.value.trim().toUpperCase();
+  
+  if (playerDatabase[code]) {
+    const player = playerDatabase[code];
+    
+    // Tenta carregar do backend primeiro
+    const savedData = await loadFromBackend(code);
+    if (savedData) {
+      Object.assign(player, savedData);
+    } else {
+      // Fallback para localStorage
+      const localData = localStorage.getItem(`playerData_${code}`);
+      if (localData) {
+        Object.assign(player, JSON.parse(localData));
+      }
+    }
+    
+    // ... resto do seu código de login ...
+  }
+}
         // Matrix Rain Effect
         function createMatrixRain() {
             const matrixRain = document.getElementById('matrixRain');
