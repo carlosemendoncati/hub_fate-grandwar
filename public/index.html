@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fate/Great War - Hub de Personagem</title>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Matrix Rain Background -->
+    <div class="matrix-rain" id="matrixRain"></div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Login Screen -->
+        <div id="login-screen">
+            <h2 class="login-title">FATE/GREAT WAR</h2>
+            <p class="login-subtitle">ACESSO AO HUB DE PERSONAGEM</p>
+            <input type="text" class="code-input" id="code-input" placeholder="DIGITE O CÓDIGO (ex: FG-XXXXX)">
+            <button class="login-btn" id="login-btn">AUTENTICAR</button>
+            <p class="subtitle" style="margin-top: 20px;">Use o código do seu convite do terminal</p>
+        </div>
+
+        <!-- Dashboard -->
+        <div id="dashboard">
+            <header>
+                <div>
+                    <h1>FATE/GREAT WAR - HUB DE PERSONAGEM</h1>
+                    <p class="subtitle" id="user-greeting">Bem-vindo, Candidato</p>
+                </div>
+                <div class="subtitle" id="user-code">CÓDIGO: --------</div>
+            </header>
+
+            <!-- Navigation Tabs -->
+            <div class="tabs">
+                <div class="tab active" data-tab="profile">PERFIL DO JOGADOR</div>
+                <div class="tab" data-tab="servant">STATUS DO SERVO</div>
+                <div class="tab" data-tab="war">INTELIGÊNCIA DA GUERRA</div>
+                <div class="tab" data-tab="quests">MISSÕES</div>
+                <div class="tab" data-tab="messages">COMUNICAÇÕES DO MESTRE</div>
+            </div>
+
+            <!-- Content Panels -->
+            <div class="content-panel active" id="profile-panel">
+                <!-- Conteúdo do perfil -->
+            </div>
+
+            <div class="content-panel" id="servant-panel">
+                <!-- Conteúdo do servo -->
+            </div>
+
+            <div class="content-panel" id="war-panel">
+                <!-- Conteúdo da guerra -->
+            </div>
+
+            <div class="content-panel" id="quests-panel">
+                <!-- Conteúdo das missões -->
+            </div>
+
+            <div class="content-panel" id="messages-panel">
+                <!-- Conteúdo das mensagens -->
+            </div>
+
+            <footer>
+                <div class="subtitle">FATE/GREAT WAR HUB DE PERSONAGEM v1.0</div>
+                <button class="logout-btn" id="logout-btn">SAIR</button>
+            </footer>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/hub.js"></script>
+</body>
+</html>
