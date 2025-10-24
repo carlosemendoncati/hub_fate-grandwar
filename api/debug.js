@@ -22,15 +22,21 @@ module.exports = async (req, res) => {
                 node_env: process.env.NODE_ENV,
                 vercel_region: process.env.VERCEL_REGION,
                 mongodb_uri_configured: !!process.env.MONGODB_URI,
+                mongodb_uri_type: typeof process.env.MONGODB_URI,
                 mongodb_uri_length: process.env.MONGODB_URI ? process.env.MONGODB_URI.length : 0
             }
         };
 
         console.log('📊 Debug Info:', debugInfo);
 
-        // Teste de conexão com MongoDB
-        if (process.env.MONGODB_URI) {
+        // Teste de conexão com MongoDB apenas se MONGODB_URI for uma string não vazia
+        if (process.env.MONGODB_URI && typeof process.env.MONGODB_URI === 'string' && process.env.MONGODB_URI.trim().length > 0) {
             debugInfo.mongodb_test = await testMongoDBConnection();
+        } else {
+            debugInfo.mongodb_test = {
+                connected: false,
+                error: 'MONGODB_URI não está definida ou é inválida'
+            };
         }
 
         res.status(200).json(debugInfo);
@@ -51,11 +57,6 @@ async function testMongoDBConnection() {
     try {
         console.log('🔗 Testando conexão com MongoDB...');
         
-        // Validação básica da string
-        if (!uri.startsWith('mongodb+srv://') && !uri.startsWith('mongodb://')) {
-            return { connected: false, error: 'Formato de URI inválido' };
-        }
-
         client = new MongoClient(uri, {
             serverSelectionTimeoutMS: 5000,
             socketTimeoutMS: 10000,
