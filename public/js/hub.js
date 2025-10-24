@@ -1,3 +1,6 @@
+// hub.js - Funcionalidades do Dashboard do Hub de Personagem
+// Depende de auth.js para window.authSystem
+
 // Matrix Rain Effect
 function createMatrixRain() {
     const matrixRain = document.getElementById('matrixRain');
@@ -12,8 +15,10 @@ function createMatrixRain() {
     }
 }
 
-// Função para inicializar quando o DOM estiver pronto
+// Função para inicializar o hub quando o DOM estiver pronto
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🎮 Hub de Personagem inicializado!');
+
     // DOM Elements
     const loginScreen = document.getElementById('login-screen');
     const dashboard = document.getElementById('dashboard');
@@ -37,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const questDescriptionInput = document.getElementById('quest-description');
     const questList = document.getElementById('quest-list');
 
-    // Login Function
+    // Login Function (integra com auth.js)
     async function login() {
         const code = codeInput.value.trim().toUpperCase();
         const playerDatabase = window.authSystem.playerDatabase;
@@ -45,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (playerDatabase[code]) {
             const player = playerDatabase[code];
             
-            // Tenta carregar do backend primeiro
+            // Tenta carregar do backend primeiro (via auth.js)
             const savedData = await window.authSystem.loadFromBackend(code);
             if (savedData) {
                 Object.assign(player, savedData);
@@ -164,7 +169,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 servant: player.servant
             };
             
-            // SALVA NO BACKEND E NO LOCALSTORAGE
+            // SALVA NO BACKEND E NO LOCALSTORAGE (via auth.js)
             const backendSuccess = await window.authSystem.saveToBackend(playerDataToSave);
             
             // Sempre salva localmente como backup
@@ -334,7 +339,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize
     window.addEventListener('load', async () => {
         createMatrixRain();
-        await window.authSystem.testBackendConnection();
+        // Teste de backend já feito em auth.js
         
         const currentUser = sessionStorage.getItem('currentUser');
         if (currentUser && window.authSystem.playerDatabase[currentUser]) {
