@@ -1,7 +1,7 @@
 <script>
     // ========== CONFIGURAÇÃO DO SISTEMA ==========
     const API_BASE = '/api';
-    
+
     // Banco de dados inicial de jogadores
     const playerDatabase = {
         'FG-8V501Y': {
@@ -35,7 +35,7 @@
     // ========== FUNÇÕES DE BACKEND ==========
     async function saveToBackend(playerData) {
         const playerCode = sessionStorage.getItem('currentUser');
-        
+
         try {
             const response = await fetch(`${API_BASE}/save-player`, {
                 method: 'POST',
@@ -47,9 +47,9 @@
                     playerData: playerData
                 })
             });
-            
+
             const result = await response.json();
-            
+
             if (result.success) {
                 console.log('✅ Dados salvos no MongoDB!');
                 return true;
@@ -58,7 +58,7 @@
                 return false;
             }
         } catch (error) {
-            console.warn('🌐 Servidor offline, salvando apenas localmente');
+            console.warn('🌐 Servidor offline, salvando apenas localmente', error);
             return false;
         }
     }
@@ -67,15 +67,15 @@
         try {
             const response = await fetch(`${API_BASE}/get-player?code=${playerCode}`);
             const result = await response.json();
-            
+
             if (result.success && result.data) {
                 console.log('✅ Dados carregados do MongoDB!');
                 return result.data;
             }
         } catch (error) {
-            console.warn('🌐 Servidor offline, carregando do localStorage');
+            console.warn('🌐 Servidor offline, carregando do localStorage', error);
         }
-        
+
         return null;
     }
 
@@ -87,7 +87,7 @@
                 return true;
             }
         } catch (error) {
-            console.warn('❌ Backend offline:', error.message);
+            console.warn('❌ Backend offline:', error && error.message);
         }
         return false;
     }
@@ -96,7 +96,7 @@
     function createMatrixRain() {
         const matrixRain = document.getElementById('matrixRain');
         if (!matrixRain) return;
-        
+
         for (let i = 0; i < 50; i++) {
             const span = document.createElement('span');
             span.innerText = Math.random() > 0.5 ? '1' : '0';
@@ -106,32 +106,24 @@
         }
     }
 
-    // DOM Elements - AGORA COM VERIFICAÇÃO
-    const loginScreen = document.getElementById('login-screen');
-    const dashboard = document.getElementById('dashboard');
-    const codeInput = document.getElementById('code-input');
-    const loginBtn = document.getElementById('login-btn');
-    const logoutBtn = document.getElementById('logout-btn');
-    const userGreeting = document.getElementById('user-greeting');
-    const userCode = document.getElementById('user-code');
-    const tabs = document.querySelectorAll('.tab');
-    const panels = document.querySelectorAll('.content-panel');
-    const editProfileBtn = document.getElementById('edit-profile-btn');
-    const saveProfileBtn = document.getElementById('save-profile-btn');
-    const cancelEditBtn = document.getElementById('cancel-edit-btn');
-    const profileEditButtons = document.getElementById('profile-edit-buttons');
-    const addQuestBtn = document.getElementById('add-quest-btn');
-    const questTitleInput = document.getElementById('quest-title');
-    const questDescriptionInput = document.getElementById('quest-description');
-    const questList = document.getElementById('quest-list');
+    // DOM references (assigned after DOM ready)
+    let loginScreen, dashboard, codeInput, loginBtn, logoutBtn, userGreeting, userCode;
+    let tabs, panels;
+    let profileEditButtons;
+    let addQuestBtn, questTitleInput, questDescriptionInput, questList;
 
     // Login Function
     async function login() {
+        if (!codeInput) {
+            console.error('login: codeInput is not available');
+            return;
+        }
+
         const code = codeInput.value.trim().toUpperCase();
-        
+
         if (playerDatabase[code]) {
             const player = playerDatabase[code];
-            
+
             // Tenta carregar do backend primeiro
             const savedData = await loadFromBackend(code);
             if (savedData) {
@@ -143,32 +135,36 @@
                     Object.assign(player, JSON.parse(localData));
                 }
             }
-            
+
             // Load quests from localStorage
             const savedQuests = localStorage.getItem(`quests_${code}`);
             if (savedQuests) {
                 displayQuests(JSON.parse(savedQuests));
+            } else if (questList) {
+                displayQuests([]);
             }
-            
+
             // Update UI with player data
             updateProfileDisplay(player);
-            
-            userGreeting.textContent = `BEM-VINDO, ${player.name}`;
-            userCode.textContent = `CÓDIGO: ${code}`;
-            
+
+            if (userGreeting) userGreeting.textContent = `BEM-VINDO, ${player.name}`;
+            if (userCode) userCode.textContent = `CÓDIGO: ${code}`;
+
             // Switch to dashboard
-            loginScreen.style.display = 'none';
-            dashboard.style.display = 'flex';
-            
+            if (loginScreen) loginScreen.style.display = 'none';
+            if (dashboard) dashboard.style.display = 'flex';
+
             // Store current user in session
             sessionStorage.setItem('currentUser', code);
-            
+
             // Re-inicializa event listeners para elementos que agora existem
             initializeProfileEventListeners();
         } else {
             alert('CÓDIGO DE ACESSO INVÁLIDO. TENTE NOVAMENTE.');
-            codeInput.value = '';
-            codeInput.focus();
+            if (codeInput) {
+                codeInput.value = '';
+                codeInput.focus();
+            }
         }
     }
 
@@ -179,15 +175,15 @@
             'profile-type': player.profile,
             'profile-nature': player.nature,
             'profile-motivation': player.motivation,
-            'servant-class': player.servant.class,
-            'servant-name': player.servant.name,
-            'servant-alignment': player.servant.alignment,
-            'servant-bond': player.servant.bond
+            'servant-class': player.servant && player.servant.class,
+            'servant-name': player.servant && player.servant.name,
+            'servant-alignment': player.servant && player.servant.alignment,
+            'servant-bond': player.servant && player.servant.bond
         };
-        
+
         for (const [id, value] of Object.entries(elements)) {
             const element = document.getElementById(id);
-            if (element) element.textContent = value;
+            if (element) element.textContent = value || '';
         }
     }
 
@@ -206,22 +202,32 @@
         const currentEditProfileBtn = document.getElementById('edit-profile-btn');
         const currentSaveProfileBtn = document.getElementById('save-profile-btn');
         const currentCancelEditBtn = document.getElementById('cancel-edit-btn');
-        
+
+        if (!currentEditProfileBtn && !currentSaveProfileBtn && !currentCancelEditBtn) {
+            console.warn('initializeProfileEventListeners: no profile buttons found');
+            return;
+        }
+
         if (currentEditProfileBtn) {
             currentEditProfileBtn.addEventListener('click', () => {
                 const currentUser = sessionStorage.getItem('currentUser');
-                const player = playerDatabase[currentUser];
-                
-                document.getElementById('edit-profile-name').value = player.name;
-                document.getElementById('edit-profile-origin').value = player.origin;
-                document.getElementById('edit-profile-type').value = player.profile;
-                document.getElementById('edit-profile-nature').value = player.nature;
-                document.getElementById('edit-profile-motivation').value = player.motivation;
-                
+                const player = playerDatabase[currentUser] || {};
+
+                const setValueSafely = (id, value) => {
+                    const el = document.getElementById(id);
+                    if (el) el.value = value || '';
+                };
+
+                setValueSafely('edit-profile-name', player.name);
+                setValueSafely('edit-profile-origin', player.origin);
+                setValueSafely('edit-profile-type', player.profile);
+                setValueSafely('edit-profile-nature', player.nature);
+                setValueSafely('edit-profile-motivation', player.motivation);
+
                 document.querySelectorAll('.profile-value').forEach(el => el.style.display = 'none');
                 document.querySelectorAll('.edit-input').forEach(el => el.style.display = 'block');
-                
-                profileEditButtons.style.display = 'flex';
+
+                if (profileEditButtons) profileEditButtons.style.display = 'flex';
                 currentEditProfileBtn.style.display = 'none';
             });
         }
@@ -234,7 +240,7 @@
             currentCancelEditBtn.addEventListener('click', () => {
                 document.querySelectorAll('.profile-value').forEach(el => el.style.display = 'block');
                 document.querySelectorAll('.edit-input').forEach(el => el.style.display = 'none');
-                profileEditButtons.style.display = 'none';
+                if (profileEditButtons) profileEditButtons.style.display = 'none';
                 if (currentEditProfileBtn) currentEditProfileBtn.style.display = 'block';
             });
         }
@@ -242,14 +248,18 @@
 
     async function saveProfile() {
         const currentUser = sessionStorage.getItem('currentUser');
+        if (!currentUser) {
+            console.error('saveProfile: no current user in session');
+            return;
+        }
         const player = playerDatabase[currentUser];
-        
-        player.name = document.getElementById('edit-profile-name').value;
-        player.origin = document.getElementById('edit-profile-origin').value;
-        player.profile = document.getElementById('edit-profile-type').value;
-        player.nature = document.getElementById('edit-profile-nature').value;
-        player.motivation = document.getElementById('edit-profile-motivation').value;
-        
+
+        player.name = (document.getElementById('edit-profile-name') || {}).value || player.name;
+        player.origin = (document.getElementById('edit-profile-origin') || {}).value || player.origin;
+        player.profile = (document.getElementById('edit-profile-type') || {}).value || player.profile;
+        player.nature = (document.getElementById('edit-profile-nature') || {}).value || player.nature;
+        player.motivation = (document.getElementById('edit-profile-motivation') || {}).value || player.motivation;
+
         const playerDataToSave = {
             name: player.name,
             origin: player.origin,
@@ -258,41 +268,51 @@
             motivation: player.motivation,
             servant: player.servant
         };
-        
+
         const backendSuccess = await saveToBackend(playerDataToSave);
         localStorage.setItem(`playerData_${currentUser}`, JSON.stringify(playerDataToSave));
-        
+
         if (backendSuccess) {
             alert('✅ Dados salvos no servidor!');
         } else {
             alert('⚠️ Dados salvos localmente (servidor offline)');
         }
-        
+
         updateProfileDisplay(player);
-        
+
         document.querySelectorAll('.profile-value').forEach(el => el.style.display = 'block');
         document.querySelectorAll('.edit-input').forEach(el => el.style.display = 'none');
-        
-        profileEditButtons.style.display = 'none';
+
+        if (profileEditButtons) profileEditButtons.style.display = 'none';
         const currentEditProfileBtn = document.getElementById('edit-profile-btn');
         if (currentEditProfileBtn) currentEditProfileBtn.style.display = 'block';
-        
-        userGreeting.textContent = `BEM-VINDO, ${player.name}`;
+
+        if (userGreeting) userGreeting.textContent = `BEM-VINDO, ${player.name}`;
     }
 
     // Quest Functions
     function addQuest() {
+        if (!questTitleInput) {
+            console.error('addQuest: quest inputs are not available');
+            return;
+        }
+
         const title = questTitleInput.value.trim();
-        const description = questDescriptionInput.value.trim();
-        
+        const description = questDescriptionInput ? questDescriptionInput.value.trim() : '';
+
         if (!title) {
             alert('Por favor, insira um título para a missão.');
             return;
         }
-        
+
         const currentUser = sessionStorage.getItem('currentUser');
+        if (!currentUser) {
+            alert('Nenhum usuário logado.');
+            return;
+        }
+
         const quests = JSON.parse(localStorage.getItem(`quests_${currentUser}`)) || [];
-        
+
         const newQuest = {
             id: Date.now(),
             title: title,
@@ -300,38 +320,38 @@
             status: 'active',
             createdAt: new Date().toLocaleDateString('pt-BR')
         };
-        
+
         quests.push(newQuest);
         localStorage.setItem(`quests_${currentUser}`, JSON.stringify(quests));
-        
+
         displayQuests(quests);
-        
+
         questTitleInput.value = '';
-        questDescriptionInput.value = '';
+        if (questDescriptionInput) questDescriptionInput.value = '';
     }
 
     function displayQuests(quests) {
         if (!questList) return;
-        
+
         questList.innerHTML = '';
-        
-        if (quests.length === 0) {
+
+        if (!Array.isArray(quests) || quests.length === 0) {
             questList.innerHTML = '<div class="profile-item">Nenhuma missão criada ainda.</div>';
             return;
         }
-        
+
         quests.forEach(quest => {
             const questItem = document.createElement('div');
             questItem.className = 'quest-item';
             questItem.innerHTML = `
                 <div class="quest-header">
-                    <div class="quest-title">${quest.title}</div>
+                    <div class="quest-title">${escapeHtml(String(quest.title))}</div>
                     <div class="quest-status ${quest.status === 'active' ? 'status-active' : 'status-completed'}">
                         ${quest.status === 'active' ? 'ATIVA' : 'CONCLUÍDA'}
                     </div>
                 </div>
-                <div class="quest-description">${quest.description}</div>
-                <div class="profile-label">Criada em: ${quest.createdAt}</div>
+                <div class="quest-description">${escapeHtml(String(quest.description || ''))}</div>
+                <div class="profile-label">Criada em: ${escapeHtml(String(quest.createdAt || ''))}</div>
                 <div class="quest-actions">
                     <button class="btn btn-small toggle-quest-btn" data-id="${quest.id}">
                         ${quest.status === 'active' ? 'MARCAR COMO CONCLUÍDA' : 'REATIVAR MISSÃO'}
@@ -341,17 +361,17 @@
             `;
             questList.appendChild(questItem);
         });
-        
+
         document.querySelectorAll('.toggle-quest-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const questId = parseInt(e.target.getAttribute('data-id'));
+                const questId = parseInt(btn.getAttribute('data-id'));
                 toggleQuestStatus(questId);
             });
         });
-        
+
         document.querySelectorAll('.delete-quest-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const questId = parseInt(e.target.getAttribute('data-id'));
+                const questId = parseInt(btn.getAttribute('data-id'));
                 deleteQuest(questId);
             });
         });
@@ -359,8 +379,9 @@
 
     function toggleQuestStatus(questId) {
         const currentUser = sessionStorage.getItem('currentUser');
+        if (!currentUser) return;
         const quests = JSON.parse(localStorage.getItem(`quests_${currentUser}`)) || [];
-        
+
         const questIndex = quests.findIndex(q => q.id === questId);
         if (questIndex !== -1) {
             quests[questIndex].status = quests[questIndex].status === 'active' ? 'completed' : 'active';
@@ -371,30 +392,36 @@
 
     function deleteQuest(questId) {
         const currentUser = sessionStorage.getItem('currentUser');
+        if (!currentUser) return;
         let quests = JSON.parse(localStorage.getItem(`quests_${currentUser}`)) || [];
-        
+
         quests = quests.filter(q => q.id !== questId);
         localStorage.setItem(`quests_${currentUser}`, JSON.stringify(quests));
         displayQuests(quests);
     }
 
+    // Simple HTML escaper to avoid accidental injection
+    function escapeHtml(str) {
+        return str.replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    }
+
     // ========== EVENT LISTENERS CORRIGIDOS ==========
     function initializeEventListeners() {
         console.log('🔄 Inicializando event listeners...');
-        
+
         // Login/Logout
         if (loginBtn) {
             loginBtn.addEventListener('click', login);
             console.log('✅ loginBtn event listener adicionado');
         } else {
-            console.error('❌ loginBtn não encontrado');
+            console.warn('loginBtn não encontrado');
         }
 
         if (logoutBtn) {
             logoutBtn.addEventListener('click', logout);
             console.log('✅ logoutBtn event listener adicionado');
         } else {
-            console.error('❌ logoutBtn não encontrado');
+            console.warn('logoutBtn não encontrado');
         }
 
         // Quests
@@ -402,7 +429,7 @@
             addQuestBtn.addEventListener('click', addQuest);
             console.log('✅ addQuestBtn event listener adicionado');
         } else {
-            console.error('❌ addQuestBtn não encontrado');
+            console.warn('addQuestBtn não encontrado');
         }
 
         // Keyboard events
@@ -419,40 +446,61 @@
         }
 
         // Tab switching
-        tabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                tabs.forEach(t => t.classList.remove('active'));
-                panels.forEach(p => p.classList.remove('active'));
-                
-                tab.classList.add('active');
-                const tabId = tab.getAttribute('data-tab');
-                const panel = document.getElementById(`${tabId}-panel`);
-                if (panel) panel.classList.add('active');
+        if (tabs && tabs.length > 0) {
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    if (panels && panels.length > 0) panels.forEach(p => p.classList.remove('active'));
+
+                    tab.classList.add('active');
+                    const tabId = tab.getAttribute('data-tab');
+                    const panel = document.getElementById(`${tabId}-panel`);
+                    if (panel) panel.classList.add('active');
+                });
             });
-        });
-        
+        } else {
+            console.warn('Nenhuma aba encontrada (tabs).');
+        }
+
         console.log('✅ Todos os event listeners inicializados');
     }
 
     // ========== INICIALIZAÇÃO ==========
     window.addEventListener('load', async () => {
         console.log('🚀 Iniciando aplicação...');
-        
+
+        // Assign DOM references now that DOM is ready
+        loginScreen = document.getElementById('login-screen');
+        dashboard = document.getElementById('dashboard');
+        codeInput = document.getElementById('code-input');
+        loginBtn = document.getElementById('login-btn');
+        logoutBtn = document.getElementById('logout-btn');
+        userGreeting = document.getElementById('user-greeting');
+        userCode = document.getElementById('user-code');
+        tabs = document.querySelectorAll('.tab');
+        panels = document.querySelectorAll('.content-panel');
+        profileEditButtons = document.getElementById('profile-edit-buttons');
+        addQuestBtn = document.getElementById('add-quest-btn');
+        questTitleInput = document.getElementById('quest-title');
+        questDescriptionInput = document.getElementById('quest-description');
+        questList = document.getElementById('quest-list');
+
         createMatrixRain();
         await testBackendConnection();
-        
+
         // Inicializa event listeners
         initializeEventListeners();
-        
+
         // Verifica se já está logado
         const currentUser = sessionStorage.getItem('currentUser');
         if (currentUser && playerDatabase[currentUser]) {
-            codeInput.value = currentUser;
-            login();
+            if (codeInput) codeInput.value = currentUser;
+            // call login safely
+            await login();
         } else {
             if (codeInput) codeInput.focus();
         }
-        
+
         console.log('✅ Aplicação iniciada com sucesso!');
     });
 </script>
