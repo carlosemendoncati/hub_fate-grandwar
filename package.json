@@ -1,6 +1,7 @@
 {
   "name": "fate-war-hub",
   "version": "1.0.0",
+  "description": "Hub para mesa Fate/Great War",
   "dependencies": {
     "mongodb": "^4.0.0"
   }
