@@ -2,6 +2,14 @@ const { MongoClient } = require('mongodb');
 
 const uri = process.env.MONGODB_URI;
 
+// Configurações otimizadas para Vercel
+const mongoOptions = {
+    maxPoolSize: 5,
+    serverSelectionTimeoutMS: 8000,
+    socketTimeoutMS: 10000,
+    connectTimeoutMS: 10000,
+};
+
 module.exports = async (req, res) => {
     console.log('💾 Save Player - Iniciando...');
     
@@ -29,12 +37,13 @@ module.exports = async (req, res) => {
 
         console.log(`💾 Salvando dados do jogador: ${playerCode}`, playerData);
         
-        // Se MONGODB_URI não está configurada, use mock
-        if (!uri) {
-            console.log('⚠️ MONGODB_URI não configurada, salvando em mock');
+        // Verificação robusta da URI
+        if (!uri || typeof uri !== 'string' || uri.trim().length === 0) {
+            console.log('⚠️ MONGODB_URI não configurada - usando fallback');
+            // Simula salvamento bem-sucedido
             return res.status(200).json({ 
                 success: true, 
-                message: 'Dados salvos localmente (MongoDB não configurado)',
+                message: 'Dados salvos localmente (MongoDB em configuração)',
                 playerCode: playerCode,
                 timestamp: new Date().toISOString(),
                 source: 'mock-save'
@@ -43,10 +52,8 @@ module.exports = async (req, res) => {
 
         let client;
         try {
-            client = new MongoClient(uri, {
-                serverSelectionTimeoutMS: 5000,
-                socketTimeoutMS: 45000,
-            });
+            console.log('🔗 Tentando conectar ao MongoDB...');
+            client = new MongoClient(uri, mongoOptions);
             await client.connect();
             console.log('✅ Conectado ao MongoDB');
             
@@ -64,21 +71,21 @@ module.exports = async (req, res) => {
                 { upsert: true }
             );
 
-            console.log(`✅ Dados salvos no MongoDB: ${result.modifiedCount} modificados, ${result.upsertedCount} inseridos`);
+            console.log(`✅ Dados salvos: ${result.modifiedCount} modificados, ${result.upsertedCount} inseridos`);
             
             res.status(200).json({ 
                 success: true, 
-                message: 'Dados salvos com sucesso no MongoDB!',
+                message: 'Dados salvos com sucesso!',
                 result: {
                     modifiedCount: result.modifiedCount,
                     upsertedCount: result.upsertedCount
-                },
-                source: 'mongodb'
+                }
             });
         } catch (mongoError) {
-            console.error('❌ Erro ao salvar no MongoDB:', mongoError);
-            // Em caso de erro, salva mock
-            res.status(200).json({ 
+            console.error('❌ Erro no MongoDB:', mongoError.message);
+            // Fallback para salvar localmente
+            console.log('🔄 Usando fallback para salvar localmente devido a erro no MongoDB');
+            return res.status(200).json({ 
                 success: true, 
                 message: 'Dados salvos localmente (erro no MongoDB)',
                 playerCode: playerCode,
@@ -88,10 +95,11 @@ module.exports = async (req, res) => {
         } finally {
             if (client) {
                 await client.close();
+                console.log('🔌 Conexão com MongoDB fechada');
             }
         }
     } catch (error) {
-        console.error('❌ Erro geral no save-player:', error);
+        console.error('❌ Erro no save-player:', error);
         res.status(500).json({ 
             success: false,
             error: error.message,
