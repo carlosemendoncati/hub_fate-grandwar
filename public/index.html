@@ -1,75 +1,458 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fate/Great War - Hub de Personagem</title>
-    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-    <!-- Matrix Rain Background -->
-    <div class="matrix-rain" id="matrixRain"></div>
+<script>
+    // ========== CONFIGURAÇÃO DO SISTEMA ==========
+    const API_BASE = '/api';
+    
+    // Banco de dados inicial de jogadores
+    const playerDatabase = {
+        'FG-8V501Y': {
+            name: 'KADU',
+            origin: 'KUROGANE',
+            profile: 'ADULTO',
+            nature: 'MAGO',
+            motivation: 'SALVAR ALGUÉM QUE PERDI',
+            servant: {
+                class: 'SABER',
+                name: 'CLASSIFICADO',
+                alignment: 'LEAL E BOM',
+                bond: 'INICIAL'
+            }
+        },
+        'FG-TEST01': {
+            name: 'JOGADOR TESTE',
+            origin: 'EXTERNA',
+            profile: 'ESTUDANTE',
+            nature: 'HUMANO COMUM',
+            motivation: 'MUDAR O MUNDO',
+            servant: {
+                class: 'ARCHER',
+                name: 'CLASSIFICADO',
+                alignment: 'NEUTRO',
+                bond: 'INICIAL'
+            }
+        }
+    };
 
-    <!-- Main Container -->
-    <div class="container">
-        <!-- Login Screen -->
-        <div id="login-screen">
-            <h2 class="login-title">FATE/GREAT WAR</h2>
-            <p class="login-subtitle">ACESSO AO HUB DE PERSONAGEM</p>
-            <input type="text" class="code-input" id="code-input" placeholder="DIGITE O CÓDIGO (ex: FG-XXXXX)">
-            <button class="login-btn" id="login-btn">AUTENTICAR</button>
-            <p class="subtitle" style="margin-top: 20px;">Use o código do seu convite do terminal</p>
-        </div>
+    // ========== FUNÇÕES DE BACKEND ==========
+    async function saveToBackend(playerData) {
+        const playerCode = sessionStorage.getItem('currentUser');
+        
+        try {
+            const response = await fetch(`${API_BASE}/save-player`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    playerCode: playerCode,
+                    playerData: playerData
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                console.log('✅ Dados salvos no MongoDB!');
+                return true;
+            } else {
+                console.warn('⚠️ Problema ao salvar no servidor');
+                return false;
+            }
+        } catch (error) {
+            console.warn('🌐 Servidor offline, salvando apenas localmente');
+            return false;
+        }
+    }
 
-        <!-- Dashboard -->
-        <div id="dashboard">
-            <header>
-                <div>
-                    <h1>FATE/GREAT WAR - HUB DE PERSONAGEM</h1>
-                    <p class="subtitle" id="user-greeting">Bem-vindo, Candidato</p>
+    async function loadFromBackend(playerCode) {
+        try {
+            const response = await fetch(`${API_BASE}/get-player?code=${playerCode}`);
+            const result = await response.json();
+            
+            if (result.success && result.data) {
+                console.log('✅ Dados carregados do MongoDB!');
+                return result.data;
+            }
+        } catch (error) {
+            console.warn('🌐 Servidor offline, carregando do localStorage');
+        }
+        
+        return null;
+    }
+
+    async function testBackendConnection() {
+        try {
+            const response = await fetch(`${API_BASE}/get-player?code=FG-8V501Y`);
+            if (response.ok) {
+                console.log('✅ Backend conectado!');
+                return true;
+            }
+        } catch (error) {
+            console.warn('❌ Backend offline:', error.message);
+        }
+        return false;
+    }
+
+    // ========== FUNÇÕES DO SISTEMA ==========
+    function createMatrixRain() {
+        const matrixRain = document.getElementById('matrixRain');
+        if (!matrixRain) return;
+        
+        for (let i = 0; i < 50; i++) {
+            const span = document.createElement('span');
+            span.innerText = Math.random() > 0.5 ? '1' : '0';
+            span.style.left = Math.random() * 100 + '%';
+            span.style.animationDelay = Math.random() * 5 + 's';
+            matrixRain.appendChild(span);
+        }
+    }
+
+    // DOM Elements - AGORA COM VERIFICAÇÃO
+    const loginScreen = document.getElementById('login-screen');
+    const dashboard = document.getElementById('dashboard');
+    const codeInput = document.getElementById('code-input');
+    const loginBtn = document.getElementById('login-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const userGreeting = document.getElementById('user-greeting');
+    const userCode = document.getElementById('user-code');
+    const tabs = document.querySelectorAll('.tab');
+    const panels = document.querySelectorAll('.content-panel');
+    const editProfileBtn = document.getElementById('edit-profile-btn');
+    const saveProfileBtn = document.getElementById('save-profile-btn');
+    const cancelEditBtn = document.getElementById('cancel-edit-btn');
+    const profileEditButtons = document.getElementById('profile-edit-buttons');
+    const addQuestBtn = document.getElementById('add-quest-btn');
+    const questTitleInput = document.getElementById('quest-title');
+    const questDescriptionInput = document.getElementById('quest-description');
+    const questList = document.getElementById('quest-list');
+
+    // Login Function
+    async function login() {
+        const code = codeInput.value.trim().toUpperCase();
+        
+        if (playerDatabase[code]) {
+            const player = playerDatabase[code];
+            
+            // Tenta carregar do backend primeiro
+            const savedData = await loadFromBackend(code);
+            if (savedData) {
+                Object.assign(player, savedData);
+            } else {
+                // Fallback para localStorage
+                const localData = localStorage.getItem(`playerData_${code}`);
+                if (localData) {
+                    Object.assign(player, JSON.parse(localData));
+                }
+            }
+            
+            // Load quests from localStorage
+            const savedQuests = localStorage.getItem(`quests_${code}`);
+            if (savedQuests) {
+                displayQuests(JSON.parse(savedQuests));
+            }
+            
+            // Update UI with player data
+            updateProfileDisplay(player);
+            
+            userGreeting.textContent = `BEM-VINDO, ${player.name}`;
+            userCode.textContent = `CÓDIGO: ${code}`;
+            
+            // Switch to dashboard
+            loginScreen.style.display = 'none';
+            dashboard.style.display = 'flex';
+            
+            // Store current user in session
+            sessionStorage.setItem('currentUser', code);
+            
+            // Re-inicializa event listeners para elementos que agora existem
+            initializeProfileEventListeners();
+        } else {
+            alert('CÓDIGO DE ACESSO INVÁLIDO. TENTE NOVAMENTE.');
+            codeInput.value = '';
+            codeInput.focus();
+        }
+    }
+
+    function updateProfileDisplay(player) {
+        const elements = {
+            'profile-name': player.name,
+            'profile-origin': player.origin,
+            'profile-type': player.profile,
+            'profile-nature': player.nature,
+            'profile-motivation': player.motivation,
+            'servant-class': player.servant.class,
+            'servant-name': player.servant.name,
+            'servant-alignment': player.servant.alignment,
+            'servant-bond': player.servant.bond
+        };
+        
+        for (const [id, value] of Object.entries(elements)) {
+            const element = document.getElementById(id);
+            if (element) element.textContent = value;
+        }
+    }
+
+    function logout() {
+        sessionStorage.removeItem('currentUser');
+        if (dashboard) dashboard.style.display = 'none';
+        if (loginScreen) loginScreen.style.display = 'flex';
+        if (codeInput) {
+            codeInput.value = '';
+            codeInput.focus();
+        }
+    }
+
+    // Profile Edit Functions
+    function initializeProfileEventListeners() {
+        const currentEditProfileBtn = document.getElementById('edit-profile-btn');
+        const currentSaveProfileBtn = document.getElementById('save-profile-btn');
+        const currentCancelEditBtn = document.getElementById('cancel-edit-btn');
+        
+        if (currentEditProfileBtn) {
+            currentEditProfileBtn.addEventListener('click', () => {
+                const currentUser = sessionStorage.getItem('currentUser');
+                const player = playerDatabase[currentUser];
+                
+                document.getElementById('edit-profile-name').value = player.name;
+                document.getElementById('edit-profile-origin').value = player.origin;
+                document.getElementById('edit-profile-type').value = player.profile;
+                document.getElementById('edit-profile-nature').value = player.nature;
+                document.getElementById('edit-profile-motivation').value = player.motivation;
+                
+                document.querySelectorAll('.profile-value').forEach(el => el.style.display = 'none');
+                document.querySelectorAll('.edit-input').forEach(el => el.style.display = 'block');
+                
+                profileEditButtons.style.display = 'flex';
+                currentEditProfileBtn.style.display = 'none';
+            });
+        }
+
+        if (currentSaveProfileBtn) {
+            currentSaveProfileBtn.addEventListener('click', saveProfile);
+        }
+
+        if (currentCancelEditBtn) {
+            currentCancelEditBtn.addEventListener('click', () => {
+                document.querySelectorAll('.profile-value').forEach(el => el.style.display = 'block');
+                document.querySelectorAll('.edit-input').forEach(el => el.style.display = 'none');
+                profileEditButtons.style.display = 'none';
+                if (currentEditProfileBtn) currentEditProfileBtn.style.display = 'block';
+            });
+        }
+    }
+
+    async function saveProfile() {
+        const currentUser = sessionStorage.getItem('currentUser');
+        const player = playerDatabase[currentUser];
+        
+        player.name = document.getElementById('edit-profile-name').value;
+        player.origin = document.getElementById('edit-profile-origin').value;
+        player.profile = document.getElementById('edit-profile-type').value;
+        player.nature = document.getElementById('edit-profile-nature').value;
+        player.motivation = document.getElementById('edit-profile-motivation').value;
+        
+        const playerDataToSave = {
+            name: player.name,
+            origin: player.origin,
+            profile: player.profile,
+            nature: player.nature,
+            motivation: player.motivation,
+            servant: player.servant
+        };
+        
+        const backendSuccess = await saveToBackend(playerDataToSave);
+        localStorage.setItem(`playerData_${currentUser}`, JSON.stringify(playerDataToSave));
+        
+        if (backendSuccess) {
+            alert('✅ Dados salvos no servidor!');
+        } else {
+            alert('⚠️ Dados salvos localmente (servidor offline)');
+        }
+        
+        updateProfileDisplay(player);
+        
+        document.querySelectorAll('.profile-value').forEach(el => el.style.display = 'block');
+        document.querySelectorAll('.edit-input').forEach(el => el.style.display = 'none');
+        
+        profileEditButtons.style.display = 'none';
+        const currentEditProfileBtn = document.getElementById('edit-profile-btn');
+        if (currentEditProfileBtn) currentEditProfileBtn.style.display = 'block';
+        
+        userGreeting.textContent = `BEM-VINDO, ${player.name}`;
+    }
+
+    // Quest Functions
+    function addQuest() {
+        const title = questTitleInput.value.trim();
+        const description = questDescriptionInput.value.trim();
+        
+        if (!title) {
+            alert('Por favor, insira um título para a missão.');
+            return;
+        }
+        
+        const currentUser = sessionStorage.getItem('currentUser');
+        const quests = JSON.parse(localStorage.getItem(`quests_${currentUser}`)) || [];
+        
+        const newQuest = {
+            id: Date.now(),
+            title: title,
+            description: description,
+            status: 'active',
+            createdAt: new Date().toLocaleDateString('pt-BR')
+        };
+        
+        quests.push(newQuest);
+        localStorage.setItem(`quests_${currentUser}`, JSON.stringify(quests));
+        
+        displayQuests(quests);
+        
+        questTitleInput.value = '';
+        questDescriptionInput.value = '';
+    }
+
+    function displayQuests(quests) {
+        if (!questList) return;
+        
+        questList.innerHTML = '';
+        
+        if (quests.length === 0) {
+            questList.innerHTML = '<div class="profile-item">Nenhuma missão criada ainda.</div>';
+            return;
+        }
+        
+        quests.forEach(quest => {
+            const questItem = document.createElement('div');
+            questItem.className = 'quest-item';
+            questItem.innerHTML = `
+                <div class="quest-header">
+                    <div class="quest-title">${quest.title}</div>
+                    <div class="quest-status ${quest.status === 'active' ? 'status-active' : 'status-completed'}">
+                        ${quest.status === 'active' ? 'ATIVA' : 'CONCLUÍDA'}
+                    </div>
                 </div>
-                <div class="subtitle" id="user-code">CÓDIGO: --------</div>
-            </header>
+                <div class="quest-description">${quest.description}</div>
+                <div class="profile-label">Criada em: ${quest.createdAt}</div>
+                <div class="quest-actions">
+                    <button class="btn btn-small toggle-quest-btn" data-id="${quest.id}">
+                        ${quest.status === 'active' ? 'MARCAR COMO CONCLUÍDA' : 'REATIVAR MISSÃO'}
+                    </button>
+                    <button class="btn btn-small delete-quest-btn" data-id="${quest.id}">EXCLUIR</button>
+                </div>
+            `;
+            questList.appendChild(questItem);
+        });
+        
+        document.querySelectorAll('.toggle-quest-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const questId = parseInt(e.target.getAttribute('data-id'));
+                toggleQuestStatus(questId);
+            });
+        });
+        
+        document.querySelectorAll('.delete-quest-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const questId = parseInt(e.target.getAttribute('data-id'));
+                deleteQuest(questId);
+            });
+        });
+    }
 
-            <!-- Navigation Tabs -->
-            <div class="tabs">
-                <div class="tab active" data-tab="profile">PERFIL DO JOGADOR</div>
-                <div class="tab" data-tab="servant">STATUS DO SERVO</div>
-                <div class="tab" data-tab="war">INTELIGÊNCIA DA GUERRA</div>
-                <div class="tab" data-tab="quests">MISSÕES</div>
-                <div class="tab" data-tab="messages">COMUNICAÇÕES DO MESTRE</div>
-            </div>
+    function toggleQuestStatus(questId) {
+        const currentUser = sessionStorage.getItem('currentUser');
+        const quests = JSON.parse(localStorage.getItem(`quests_${currentUser}`)) || [];
+        
+        const questIndex = quests.findIndex(q => q.id === questId);
+        if (questIndex !== -1) {
+            quests[questIndex].status = quests[questIndex].status === 'active' ? 'completed' : 'active';
+            localStorage.setItem(`quests_${currentUser}`, JSON.stringify(quests));
+            displayQuests(quests);
+        }
+    }
 
-            <!-- Content Panels -->
-            <div class="content-panel active" id="profile-panel">
-                <!-- Conteúdo do perfil -->
-            </div>
+    function deleteQuest(questId) {
+        const currentUser = sessionStorage.getItem('currentUser');
+        let quests = JSON.parse(localStorage.getItem(`quests_${currentUser}`)) || [];
+        
+        quests = quests.filter(q => q.id !== questId);
+        localStorage.setItem(`quests_${currentUser}`, JSON.stringify(quests));
+        displayQuests(quests);
+    }
 
-            <div class="content-panel" id="servant-panel">
-                <!-- Conteúdo do servo -->
-            </div>
+    // ========== EVENT LISTENERS CORRIGIDOS ==========
+    function initializeEventListeners() {
+        console.log('🔄 Inicializando event listeners...');
+        
+        // Login/Logout
+        if (loginBtn) {
+            loginBtn.addEventListener('click', login);
+            console.log('✅ loginBtn event listener adicionado');
+        } else {
+            console.error('❌ loginBtn não encontrado');
+        }
 
-            <div class="content-panel" id="war-panel">
-                <!-- Conteúdo da guerra -->
-            </div>
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', logout);
+            console.log('✅ logoutBtn event listener adicionado');
+        } else {
+            console.error('❌ logoutBtn não encontrado');
+        }
 
-            <div class="content-panel" id="quests-panel">
-                <!-- Conteúdo das missões -->
-            </div>
+        // Quests
+        if (addQuestBtn) {
+            addQuestBtn.addEventListener('click', addQuest);
+            console.log('✅ addQuestBtn event listener adicionado');
+        } else {
+            console.error('❌ addQuestBtn não encontrado');
+        }
 
-            <div class="content-panel" id="messages-panel">
-                <!-- Conteúdo das mensagens -->
-            </div>
+        // Keyboard events
+        if (codeInput) {
+            codeInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') login();
+            });
+        }
 
-            <footer>
-                <div class="subtitle">FATE/GREAT WAR HUB DE PERSONAGEM v1.0</div>
-                <button class="logout-btn" id="logout-btn">SAIR</button>
-            </footer>
-        </div>
-    </div>
+        if (questTitleInput) {
+            questTitleInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') addQuest();
+            });
+        }
 
-    <script src="js/auth.js"></script>
-    <script src="js/hub.js"></script>
-</body>
-</html>
+        // Tab switching
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                panels.forEach(p => p.classList.remove('active'));
+                
+                tab.classList.add('active');
+                const tabId = tab.getAttribute('data-tab');
+                const panel = document.getElementById(`${tabId}-panel`);
+                if (panel) panel.classList.add('active');
+            });
+        });
+        
+        console.log('✅ Todos os event listeners inicializados');
+    }
+
+    // ========== INICIALIZAÇÃO ==========
+    window.addEventListener('load', async () => {
+        console.log('🚀 Iniciando aplicação...');
+        
+        createMatrixRain();
+        await testBackendConnection();
+        
+        // Inicializa event listeners
+        initializeEventListeners();
+        
+        // Verifica se já está logado
+        const currentUser = sessionStorage.getItem('currentUser');
+        if (currentUser && playerDatabase[currentUser]) {
+            codeInput.value = currentUser;
+            login();
+        } else {
+            if (codeInput) codeInput.focus();
+        }
+        
+        console.log('✅ Aplicação iniciada com sucesso!');
+    });
+</script>
