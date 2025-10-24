@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fate/Great War - Hub de Personagem</title>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --crt-green: #98ff9a;
+            --crt-dim: #6fbf7a;
+            --accent: #44ff88;
+            --muted: #7a9aa0;
+            --bg-dark: #040608;
+            --bg-gradient: radial-gradient(ellipse at center, #071015 0%, #030406 60%, #000 100%);
+            --scanline: rgba(0,0,0,0.15);
+            --glow: 0 0 18px rgba(68,255,136,0.12);
+            --font: 'Share Tech Mono', monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--crt-green);
+            font-family: var(--font);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Matrix Rain Background */
+        .matrix-rain {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: -1;
+            opacity: 0.3;
+        }
+
+        .matrix-rain span {
+            position: absolute;
+            color: var(--crt-green);
+            font-size: 12px;
+            opacity: 0.8;
+            animation: fall 5s linear infinite;
+        }
+
+        @keyframes fall {
+            0% { transform: translateY(-100vh); }
+            100% { transform: translateY(100vh); }
+        }
+
+        /* Main Container */
+        .container {
+            width: 95%;
+            max-width: 1000px;
+            height: 85%;
+            background: rgba(0,0,0,0.85);
+            border: 2px solid var(--accent);
+            padding: 20px;
+            box-shadow: 0 0 30px var(--accent), inset 0 0 20px rgba(68,255,153,0.2);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(68,255,136,0.3);
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 24px;
+            color: var(--accent);
+            text-shadow: var(--glow);
+        }
+
+        .subtitle {
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        /* Login Screen */
+        #login-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            text-align: center;
+        }
+
+        .login-title {
+            font-size: 28px;
+            margin-bottom: 10px;
+            color: var(--accent);
+            text-shadow: var(--glow);
+        }
+
+        .login-subtitle {
+            color: var(--muted);
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+
+        .code-input {
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--crt-green);
+            padding: 12px 15px;
+            font-size: 18px;
+            font-family: var(--font);
+            width: 300px;
+            text-align: center;
+            margin-bottom: 20px;
+            outline: none;
+        }
+
+        .code-input::placeholder {
+            color: var(--muted);
+        }
+
+        .login-btn {
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--crt-green);
+            padding: 10px 25px;
+            font-size: 16px;
+            font-family: var(--font);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .login-btn:hover {
+            background: var(--accent);
+            color: var(--bg-dark);
+        }
+
+        /* Dashboard */
+        #dashboard {
+            display: none;
+            height: 100%;
+            flex-direction: column;
+        }
+
+        /* Navigation Tabs */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid rgba(68,255,136,0.3);
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            border-bottom: none;
+            margin-right: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            border-color: var(--accent);
+            background: rgba(68,255,136,0.1);
+        }
+
+        .tab:hover:not(.active) {
+            background: rgba(68,255,136,0.05);
+        }
+
+        /* Content Panels */
+        .content-panel {
+            display: none;
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .content-panel.active {
+            display: block;
+        }
+
+        /* Profile Panel */
+        .profile-section {
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            color: var(--accent);
+            font-size: 18px;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid rgba(68,255,136,0.2);
+        }
+
+        .profile-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .profile-item {
+            padding: 10px;
+            border: 1px solid rgba(68,255,136,0.1);
+            background: rgba(0,0,0,0.3);
+        }
+
+        .profile-label {
+            color: var(--muted);
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .profile-value {
+            color: var(--crt-green);
+            font-size: 16px;
+        }
+
+        .edit-input {
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--crt-green);
+            padding: 5px;
+            font-family: var(--font);
+            width: 100%;
+            outline: none;
+        }
+
+        .edit-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn {
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--crt-green);
+            padding: 8px 15px;
+            font-family: var(--font);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: var(--accent);
+            color: var(--bg-dark);
+        }
+
+        /* Servant Panel */
+        .servant-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-bar {
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .bar-container {
+            height: 10px;
+            background: rgba(68,255,136,0.1);
+            border: 1px solid rgba(68,255,136,0.3);
+        }
+
+        .bar-fill {
+            height: 100%;
+            background: var(--accent);
+        }
+
+        /* War Panel */
+        .war-status {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .status-card {
+            padding: 15px;
+            border: 1px solid rgba(68,255,136,0.2);
+            background: rgba(0,0,0,0.3);
+        }
+
+        /* Quests Panel */
+        .quest-form {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid rgba(68,255,136,0.2);
+            background: rgba(0,0,0,0.3);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-input {
+            background: transparent;
+            border: 1px solid rgba(68,255,136,0.3);
+            color: var(--crt-green);
+            padding: 8px;
+            font-family: var(--font);
+            width: 100%;
+            outline: none;
+            margin-top: 5px;
+        }
+
+        .quest-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .quest-item {
+            padding: 15px;
+            border: 1px solid rgba(68,255,136,0.2);
+            background: rgba(0,0,0,0.3);
+        }
+
+        .quest-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .quest-title {
+            color: var(--accent);
+            font-size: 16px;
+        }
+
+        .quest-status {
+            font-size: 14px;
+            padding: 3px 8px;
+            border-radius: 3px;
+        }
+
+        .status-active {
+            background: rgba(68,255,136,0.2);
+            color: var(--accent);
+        }
+
+        .status-completed {
+            background: rgba(255,255,255,0.2);
+            color: var(--muted);
+        }
+
+        .quest-description {
+            color: var(--crt-dim);
+            margin-bottom: 10px;
+        }
+
+        .quest-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        /* Footer */
+        footer {
+            margin-top: auto;
+            padding-top: 15px;
+            border-top: 1px solid rgba(68,255,136,0.3);
+            color: var(--muted);
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Logout Button */
+        .logout-btn {
+            background: transparent;
+            border: 1px solid var(--muted);
+            color: var(--muted);
+            padding: 5px 10px;
+            font-size: 12px;
+            font-family: var(--font);
+            cursor: pointer;
+        }
+
+        .logout-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                height: 95%;
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 18px;
+            }
+            
+            .tabs {
+                flex-wrap: wrap;
+            }
+            
+            .tab {
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+            
+            .profile-grid, .servant-stats, .war-status {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Matrix Rain Background -->
+    <div class="matrix-rain" id="matrixRain"></div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Login Screen -->
+        <div id="login-screen">
+            <h2 class="login-title">FATE/GREAT WAR</h2>
+            <p class="login-subtitle">ACESSO AO HUB DE PERSONAGEM</p>
+            <input type="text" class="code-input" id="code-input" placeholder="DIGITE O CÓDIGO (ex: FG-XXXXX)">
+            <button class="login-btn" id="login-btn">AUTENTICAR</button>
+            <p class="subtitle" style="margin-top: 20px;">Use o código do seu convite do terminal</p>
+        </div>
+
+        <!-- Dashboard -->
+        <div id="dashboard">
+            <header>
+                <div>
+                    <h1>FATE/GREAT WAR - HUB DE PERSONAGEM</h1>
+                    <p class="subtitle" id="user-greeting">Bem-vindo, Candidato</p>
+                </div>
+                <div class="subtitle" id="user-code">CÓDIGO: --------</div>
+            </header>
+
+            <!-- Navigation Tabs -->
+            <div class="tabs">
+                <div class="tab active" data-tab="profile">PERFIL DO JOGADOR</div>
+                <div class="tab" data-tab="servant">STATUS DO SERVO</div>
+                <div class="tab" data-tab="war">INTELIGÊNCIA DA GUERRA</div>
+                <div class="tab" data-tab="quests">MISSÕES</div>
+                <div class="tab" data-tab="messages">COMUNICAÇÕES DO MESTRE</div>
+            </div>
+
+            <!-- Content Panels -->
+            <div class="content-panel active" id="profile-panel">
+                <div class="profile-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3 class="section-title">DADOS PESSOAIS</h3>
+                        <button class="btn" id="edit-profile-btn">EDITAR PERFIL</button>
+                    </div>
+                    <div class="profile-grid">
+                        <div class="profile-item">
+                            <div class="profile-label">NOME</div>
+                            <div class="profile-value" id="profile-name">---</div>
+                            <input type="text" class="edit-input" id="edit-profile-name" style="display: none;">
+                        </div>
+                        <div class="profile-item">
+                            <div class="profile-label">ORIGEM</div>
+                            <div class="profile-value" id="profile-origin">---</div>
+                            <input type="text" class="edit-input" id="edit-profile-origin" style="display: none;">
+                        </div>
+                        <div class="profile-item">
+                            <div class="profile-label">PERFIL</div>
+                            <div class="profile-value" id="profile-type">---</div>
+                            <input type="text" class="edit-input" id="edit-profile-type" style="display: none;">
+                        </div>
+                        <div class="profile-item">
+                            <div class="profile-label">NATUREZA</div>
+                            <div class="profile-value" id="profile-nature">---</div>
+                            <input type="text" class="edit-input" id="edit-profile-nature" style="display: none;">
+                        </div>
+                        <div class="profile-item">
+                            <div class="profile-label">MOTIVAÇÃO</div>
+                            <div class="profile-value" id="profile-motivation">---</div>
+                            <input type="text" class="edit-input" id="edit-profile-motivation" style="display: none;">
+                        </div>
+                        <div class="profile-item">
+                            <div class="profile-label">STATUS NA GUERRA</div>
+                            <div class="profile-value" id="profile-status">ATIVO</div>
+                        </div>
+                    </div>
+                    <div class="edit-buttons" id="profile-edit-buttons" style="display: none;">
+                        <button class="btn" id="save-profile-btn">SALVAR ALTERAÇÕES</button>
+                        <button class="btn" id="cancel-edit-btn">CANCELAR</button>
+                    </div>
+                </div>
+
+                <div class="profile-section">
+                    <h3 class="section-title">ATIVIDADE RECENTE</h3>
+                    <div class="profile-item">
+                        <div class="profile-value">Aguardando primeiro briefing de missão...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-panel" id="servant-panel">
+                <div class="profile-section">
+                    <h3 class="section-title">DADOS DO SERVO</h3>
+                    <div class="profile-grid">
+                        <div class="profile-item">
+                            <div class="profile-label">CLASSE</div>
+                            <div class="profile-value" id="servant-class">---</div>
+                        </div>
+                        <div class="profile-item">
+                            <div class="profile-label">VERDADEIRO NOME</div>
+                            <div class="profile-value" id="servant-name">CLASSIFICADO</div>
+                        </div>
+                        <div class="profile-item">
+                            <div class="profile-label">ALINHAMENTO</div>
+                            <div class="profile-value" id="servant-alignment">---</div>
+                        </div>
+                        <div class="profile-item">
+                            <div class="profile-label">NÍVEL DE VÍNCULO</div>
+                            <div class="profile-value" id="servant-bond">INICIAL</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="profile-section">
+                    <h3 class="section-title">ATRIBUTOS</h3>
+                    <div class="servant-stats">
+                        <div class="stat-bar">
+                            <div class="stat-label">
+                                <span>SAÚDE</span>
+                                <span id="health-value">100%</span>
+                            </div>
+                            <div class="bar-container">
+                                <div class="bar-fill" id="health-bar" style="width: 100%"></div>
+                            </div>
+                        </div>
+                        <div class="stat-bar">
+                            <div class="stat-label">
+                                <span>MANA</span>
+                                <span id="mana-value">100%</span>
+                            </div>
+                            <div class="bar-container">
+                                <div class="bar-fill" id="mana-bar" style="width: 100%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-panel" id="war-panel">
+                <div class="profile-section">
+                    <h3 class="section-title">STATUS DA GUERRA</h3>
+                    <div class="war-status">
+                        <div class="status-card">
+                            <div class="profile-label">FASE ATUAL</div>
+                            <div class="profile-value">PREPARAÇÃO</div>
+                        </div>
+                        <div class="status-card">
+                            <div class="profile-label">DIAS ATÉ O EVENTO</div>
+                            <div class="profile-value" id="days-until">3</div>
+                        </div>
+                        <div class="status-card">
+                            <div class="profile-label">PARTICIPANTES ATIVOS</div>
+                            <div class="profile-value">7</div>
+                        </div>
+                        <div class="status-card">
+                            <div class="profile-label">LOCALIZAÇÃO</div>
+                            <div class="profile-value">KUROGANE</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="profile-section">
+                    <h3 class="section-title">EVENTOS RECENTES</h3>
+                    <div class="profile-item">
+                        <div class="profile-value">Declaração de guerra confirmada. Sete Mestres convocados.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-panel" id="quests-panel">
+                <div class="profile-section">
+                    <h3 class="section-title">SISTEMA DE MISSÕES</h3>
+                    
+                    <div class="quest-form">
+                        <h4 style="color: var(--accent); margin-bottom: 15px;">CRIAR NOVA MISSÃO</h4>
+                        <div class="form-group">
+                            <div class="profile-label">TÍTULO DA MISSÃO</div>
+                            <input type="text" class="form-input" id="quest-title" placeholder="Digite o título da missão">
+                        </div>
+                        <div class="form-group">
+                            <div class="profile-label">DESCRIÇÃO</div>
+                            <textarea class="form-input" id="quest-description" placeholder="Descreva os objetivos da missão" rows="3"></textarea>
+                        </div>
+                        <button class="btn" id="add-quest-btn">ADICIONAR MISSÃO</button>
+                    </div>
+                    
+                    <div class="quest-list" id="quest-list">
+                        <!-- As missões serão adicionadas aqui dinamicamente -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-panel" id="messages-panel">
+                <div class="profile-section">
+                    <h3 class="section-title">COMUNICAÇÕES DO MESTRE</h3>
+                    <div class="profile-item">
+                        <div class="profile-label">MENSAGEM MAIS RECENTE</div>
+                        <div class="profile-value">Bem-vindo à Guerra do Santo Graal. Seu ritual de invocação do Servo está agendado para daqui a 3 dias no Rio Akagane. Prepare-se adequadamente.</div>
+                    </div>
+                </div>
+            </div>
+
+            <footer>
+                <div class="subtitle">FATE/GREAT WAR HUB DE PERSONAGEM v1.0</div>
+                <button class="logout-btn" id="logout-btn">SAIR</button>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        // Matrix Rain Effect
+        function createMatrixRain() {
+            const matrixRain = document.getElementById('matrixRain');
+            for (let i = 0; i < 50; i++) {
+                const span = document.createElement('span');
+                span.innerText = Math.random() > 0.5 ? '1' : '0';
+                span.style.left = Math.random() * 100 + '%';
+                span.style.animationDelay = Math.random() * 5 + 's';
+                matrixRain.appendChild(span);
+            }
+        }
+
+        // Sample player data (in a real app, this would come from a database)
+        const playerDatabase = {
+            'FG-8V501Y': {
+                name: 'KADU',
+                origin: 'KUROGANE',
+                profile: 'ADULTO',
+                nature: 'MAGO',
+                motivation: 'SALVAR ALGUÉM QUE PERDI',
+                servant: {
+                    class: 'SABER',
+                    name: 'CLASSIFICADO',
+                    alignment: 'LEAL E BOM',
+                    bond: 'INICIAL'
+                }
+            },
+            'FG-TEST01': {
+                name: 'JOGADOR TESTE',
+                origin: 'EXTERNA',
+                profile: 'ESTUDANTE',
+                nature: 'HUMANO COMUM',
+                motivation: 'MUDAR O MUNDO',
+                servant: {
+                    class: 'ARCHER',
+                    name: 'CLASSIFICADO',
+                    alignment: 'NEUTRO',
+                    bond: 'INICIAL'
+                }
+            }
+        };
+
+        // DOM Elements
+        const loginScreen = document.getElementById('login-screen');
+        const dashboard = document.getElementById('dashboard');
+        const codeInput = document.getElementById('code-input');
+        const loginBtn = document.getElementById('login-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const userGreeting = document.getElementById('user-greeting');
+        const userCode = document.getElementById('user-code');
+        const tabs = document.querySelectorAll('.tab');
+        const panels = document.querySelectorAll('.content-panel');
+        
+        // Profile Edit Elements
+        const editProfileBtn = document.getElementById('edit-profile-btn');
+        const saveProfileBtn = document.getElementById('save-profile-btn');
+        const cancelEditBtn = document.getElementById('cancel-edit-btn');
+        const profileEditButtons = document.getElementById('profile-edit-buttons');
+        
+        // Quest Elements
+        const addQuestBtn = document.getElementById('add-quest-btn');
+        const questTitleInput = document.getElementById('quest-title');
+        const questDescriptionInput = document.getElementById('quest-description');
+        const questList = document.getElementById('quest-list');
+
+        // Login Function
+        function login() {
+            const code = codeInput.value.trim().toUpperCase();
+            
+            if (playerDatabase[code]) {
+                const player = playerDatabase[code];
+                
+                // Load saved data from localStorage if exists
+                const savedPlayerData = localStorage.getItem(`playerData_${code}`);
+                if (savedPlayerData) {
+                    const savedData = JSON.parse(savedPlayerData);
+                    Object.assign(player, savedData);
+                }
+                
+                // Load quests from localStorage
+                const savedQuests = localStorage.getItem(`quests_${code}`);
+                if (savedQuests) {
+                    displayQuests(JSON.parse(savedQuests));
+                }
+                
+                // Update UI with player data
+                updateProfileDisplay(player);
+                
+                userGreeting.textContent = `BEM-VINDO, ${player.name}`;
+                userCode.textContent = `CÓDIGO: ${code}`;
+                
+                // Switch to dashboard
+                loginScreen.style.display = 'none';
+                dashboard.style.display = 'flex';
+                
+                // Store current user in session
+                sessionStorage.setItem('currentUser', code);
+            } else {
+                alert('CÓDIGO DE ACESSO INVÁLIDO. TENTE NOVAMENTE.');
+                codeInput.value = '';
+                codeInput.focus();
+            }
+        }
+
+        // Update profile display
+        function updateProfileDisplay(player) {
+            document.getElementById('profile-name').textContent = player.name;
+            document.getElementById('profile-origin').textContent = player.origin;
+            document.getElementById('profile-type').textContent = player.profile;
+            document.getElementById('profile-nature').textContent = player.nature;
+            document.getElementById('profile-motivation').textContent = player.motivation;
+            document.getElementById('servant-class').textContent = player.servant.class;
+            document.getElementById('servant-name').textContent = player.servant.name;
+            document.getElementById('servant-alignment').textContent = player.servant.alignment;
+            document.getElementById('servant-bond').textContent = player.servant.bond;
+        }
+
+        // Logout Function
+        function logout() {
+            sessionStorage.removeItem('currentUser');
+            dashboard.style.display = 'none';
+            loginScreen.style.display = 'flex';
+            codeInput.value = '';
+            codeInput.focus();
+        }
+
+        // Tab Switching
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs and panels
+                tabs.forEach(t => t.classList.remove('active'));
+                panels.forEach(p => p.classList.remove('active'));
+                
+                // Add active class to clicked tab and corresponding panel
+                tab.classList.add('active');
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(`${tabId}-panel`).classList.add('active');
+            });
+        });
+
+        // Profile Edit Functions
+        editProfileBtn.addEventListener('click', () => {
+            const currentUser = sessionStorage.getItem('currentUser');
+            const player = playerDatabase[currentUser];
+            
+            // Show edit inputs with current values
+            document.getElementById('edit-profile-name').value = player.name;
+            document.getElementById('edit-profile-origin').value = player.origin;
+            document.getElementById('edit-profile-type').value = player.profile;
+            document.getElementById('edit-profile-nature').value = player.nature;
+            document.getElementById('edit-profile-motivation').value = player.motivation;
+            
+            // Hide display values, show inputs
+            document.querySelectorAll('.profile-value').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.edit-input').forEach(el => el.style.display = 'block');
+            
+            // Show edit buttons
+            profileEditButtons.style.display = 'flex';
+            editProfileBtn.style.display = 'none';
+        });
+
+        saveProfileBtn.addEventListener('click', () => {
+            const currentUser = sessionStorage.getItem('currentUser');
+            const player = playerDatabase[currentUser];
+            
+            // Update player data with edited values
+            player.name = document.getElementById('edit-profile-name').value;
+            player.origin = document.getElementById('edit-profile-origin').value;
+            player.profile = document.getElementById('edit-profile-type').value;
+            player.nature = document.getElementById('edit-profile-nature').value;
+            player.motivation = document.getElementById('edit-profile-motivation').value;
+            
+            // Save to localStorage
+            localStorage.setItem(`playerData_${currentUser}`, JSON.stringify({
+                name: player.name,
+                origin: player.origin,
+                profile: player.profile,
+                nature: player.nature,
+                motivation: player.motivation
+            }));
+            
+            // Update display
+            updateProfileDisplay(player);
+            
+            // Hide inputs, show display values
+            document.querySelectorAll('.profile-value').forEach(el => el.style.display = 'block');
+            document.querySelectorAll('.edit-input').forEach(el => el.style.display = 'none');
+            
+            // Hide edit buttons, show edit profile button
+            profileEditButtons.style.display = 'none';
+            editProfileBtn.style.display = 'block';
+            
+            // Update greeting
+            userGreeting.textContent = `BEM-VINDO, ${player.name}`;
+        });
+
+        cancelEditBtn.addEventListener('click', () => {
+            // Hide inputs, show display values
+            document.querySelectorAll('.profile-value').forEach(el => el.style.display = 'block');
+            document.querySelectorAll('.edit-input').forEach(el => el.style.display = 'none');
+            
+            // Hide edit buttons, show edit profile button
+            profileEditButtons.style.display = 'none';
+            editProfileBtn.style.display = 'block';
+        });
+
+        // Quest Functions
+        function addQuest() {
+            const title = questTitleInput.value.trim();
+            const description = questDescriptionInput.value.trim();
+            
+            if (!title) {
+                alert('Por favor, insira um título para a missão.');
+                return;
+            }
+            
+            const currentUser = sessionStorage.getItem('currentUser');
+            const quests = JSON.parse(localStorage.getItem(`quests_${currentUser}`)) || [];
+            
+            const newQuest = {
+                id: Date.now(),
+                title: title,
+                description: description,
+                status: 'active',
+                createdAt: new Date().toLocaleDateString('pt-BR')
+            };
+            
+            quests.push(newQuest);
+            localStorage.setItem(`quests_${currentUser}`, JSON.stringify(quests));
+            
+            displayQuests(quests);
+            
+            // Clear form
+            questTitleInput.value = '';
+            questDescriptionInput.value = '';
+        }
+
+        function displayQuests(quests) {
+            questList.innerHTML = '';
+            
+            if (quests.length === 0) {
+                questList.innerHTML = '<div class="profile-item">Nenhuma missão criada ainda.</div>';
+                return;
+            }
+            
+            quests.forEach(quest => {
+                const questItem = document.createElement('div');
+                questItem.className = 'quest-item';
+                questItem.innerHTML = `
+                    <div class="quest-header">
+                        <div class="quest-title">${quest.title}</div>
+                        <div class="quest-status ${quest.status === 'active' ? 'status-active' : 'status-completed'}">
+                            ${quest.status === 'active' ? 'ATIVA' : 'CONCLUÍDA'}
+                        </div>
+                    </div>
+                    <div class="quest-description">${quest.description}</div>
+                    <div class="profile-label">Criada em: ${quest.createdAt}</div>
+                    <div class="quest-actions">
+                        <button class="btn btn-small toggle-quest-btn" data-id="${quest.id}">
+                            ${quest.status === 'active' ? 'MARCAR COMO CONCLUÍDA' : 'REATIVAR MISSÃO'}
+                        </button>
+                        <button class="btn btn-small delete-quest-btn" data-id="${quest.id}">EXCLUIR</button>
+                    </div>
+                `;
+                questList.appendChild(questItem);
+            });
+            
+            // Add event listeners to quest buttons
+            document.querySelectorAll('.toggle-quest-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const questId = parseInt(e.target.getAttribute('data-id'));
+                    toggleQuestStatus(questId);
+                });
+            });
+            
+            document.querySelectorAll('.delete-quest-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const questId = parseInt(e.target.getAttribute('data-id'));
+                    deleteQuest(questId);
+                });
+            });
+        }
+
+        function toggleQuestStatus(questId) {
+            const currentUser = sessionStorage.getItem('currentUser');
+            const quests = JSON.parse(localStorage.getItem(`quests_${currentUser}`)) || [];
+            
+            const questIndex = quests.findIndex(q => q.id === questId);
+            if (questIndex !== -1) {
+                quests[questIndex].status = quests[questIndex].status === 'active' ? 'completed' : 'active';
+                localStorage.setItem(`quests_${currentUser}`, JSON.stringify(quests));
+                displayQuests(quests);
+            }
+        }
+
+        function deleteQuest(questId) {
+            const currentUser = sessionStorage.getItem('currentUser');
+            let quests = JSON.parse(localStorage.getItem(`quests_${currentUser}`)) || [];
+            
+            quests = quests.filter(q => q.id !== questId);
+            localStorage.setItem(`quests_${currentUser}`, JSON.stringify(quests));
+            displayQuests(quests);
+        }
+
+        // Event Listeners
+        loginBtn.addEventListener('click', login);
+        logoutBtn.addEventListener('click', logout);
+        addQuestBtn.addEventListener('click', addQuest);
+        
+        codeInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                login();
+            }
+        });
+
+        questTitleInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addQuest();
+            }
+        });
+
+        // Check if user is already logged in
+        window.addEventListener('load', () => {
+            createMatrixRain();
+            
+            const currentUser = sessionStorage.getItem('currentUser');
+            if (currentUser && playerDatabase[currentUser]) {
+                codeInput.value = currentUser;
+                login();
+            } else {
+                codeInput.focus();
+            }
+        });
+    </script>
+</body>
+</html>
