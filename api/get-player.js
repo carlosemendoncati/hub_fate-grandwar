@@ -2,8 +2,16 @@ const { MongoClient } = require('mongodb');
 
 const uri = process.env.MONGODB_URI;
 
+// Configurações otimizadas para Vercel
+const mongoOptions = {
+    maxPoolSize: 5,
+    serverSelectionTimeoutMS: 8000,
+    socketTimeoutMS: 10000,
+    connectTimeoutMS: 10000,
+};
+
 module.exports = async (req, res) => {
-    console.log('🔍 GET Player - Iniciando...');
+    console.log('🔍 GET Player - Iniciando requisição...');
     
     // Headers de segurança e CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -13,6 +21,7 @@ module.exports = async (req, res) => {
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
 
     if (req.method === 'OPTIONS') {
+        console.log('✅ OPTIONS preflight OK');
         return res.status(200).end();
     }
 
@@ -29,54 +38,64 @@ module.exports = async (req, res) => {
 
         console.log(`🔍 Buscando jogador: ${code}`);
         
-        // Se MONGODB_URI não está configurada, use mock
-        if (!uri) {
-            console.log('⚠️ MONGODB_URI não configurada, usando dados mock');
+        // Verificação robusta da URI
+        if (!uri || typeof uri !== 'string' || uri.trim().length === 0) {
+            console.log('⚠️ MONGODB_URI não configurada ou inválida - usando fallback');
             return getMockPlayer(code, res);
         }
 
         let client;
         try {
-            client = new MongoClient(uri, {
-                serverSelectionTimeoutMS: 5000,
-                socketTimeoutMS: 45000,
-            });
+            console.log('🔗 Tentando conectar ao MongoDB...');
+            client = new MongoClient(uri, mongoOptions);
             await client.connect();
             console.log('✅ Conectado ao MongoDB');
             
             const database = client.db('fate-war');
             const collection = database.collection('players');
 
+            console.log(`📊 Buscando jogador ${code} no banco...`);
             const player = await collection.findOne({ code: code });
 
             if (player) {
-                console.log(`✅ Jogador encontrado no MongoDB: ${player.name}`);
-                res.status(200).json({ success: true, data: player, source: 'mongodb' });
+                console.log(`✅ Jogador encontrado: ${player.name}`);
+                res.status(200).json({ 
+                    success: true, 
+                    data: player,
+                    source: 'mongodb'
+                });
             } else {
-                console.log(`❌ Jogador não encontrado no MongoDB: ${code}`);
-                // Se não encontrou no MongoDB, tenta o mock
-                getMockPlayer(code, res);
+                console.log(`❌ Jogador não encontrado no banco: ${code}`);
+                res.status(404).json({ 
+                    success: false, 
+                    error: 'Jogador não encontrado no banco de dados'
+                });
             }
         } catch (mongoError) {
-            console.error('❌ Erro ao conectar ao MongoDB:', mongoError);
-            // Em caso de erro, usa mock
-            getMockPlayer(code, res);
+            console.error('❌ Erro no MongoDB:', mongoError.message);
+            // Fallback para dados mock em caso de erro
+            console.log('🔄 Usando fallback para dados mock devido a erro no MongoDB');
+            return getMockPlayer(code, res);
         } finally {
             if (client) {
                 await client.close();
+                console.log('🔌 Conexão com MongoDB fechada');
             }
         }
     } catch (error) {
-        console.error('❌ Erro geral no get-player:', error);
+        console.error('💥 Erro geral no get-player:', error);
         res.status(500).json({ 
             success: false, 
-            error: error.message,
-            message: 'Erro interno do servidor'
+            error: 'Erro interno do servidor',
+            message: error.message
         });
     }
 };
 
+// Função de fallback com dados mock
 function getMockPlayer(code, res) {
+    console.log('🎭 Usando dados mock para:', code);
+    
     const mockPlayers = {
         'FG-8V501Y': {
             name: 'KADU',
@@ -111,15 +130,13 @@ function getMockPlayer(code, res) {
     const player = mockPlayers[code];
 
     if (player) {
-        console.log(`✅ Jogador encontrado em mock: ${player.name}`);
         res.status(200).json({ 
             success: true, 
             data: player,
             source: 'mock-data',
-            message: 'Dados de teste (MongoDB indisponível)'
+            message: 'Dados de teste (MongoDB em configuração)'
         });
     } else {
-        console.log(`❌ Jogador não encontrado em mock: ${code}`);
         res.status(404).json({ 
             success: false, 
             error: 'Jogador não encontrado',
