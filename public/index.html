@@ -43,23 +43,166 @@
 
             <!-- Content Panels -->
             <div class="content-panel active" id="profile-panel">
-                <!-- Conteúdo do perfil -->
+                <div class="profile-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3 class="section-title">DADOS PESSOAIS</h3>
+                        <button class="btn" id="edit-profile-btn">EDITAR PERFIL</button>
+                    </div>
+                    <div class="profile-grid">
+                        <div class="profile-item">
+                            <div class="profile-label">NOME</div>
+                            <div class="profile-value" id="profile-name">---</div>
+                            <input type="text" class="edit-input" id="edit-profile-name" style="display: none;">
+                        </div>
+                        <div class="profile-item">
+                            <div class="profile-label">ORIGEM</div>
+                            <div class="profile-value" id="profile-origin">---</div>
+                            <input type="text" class="edit-input" id="edit-profile-origin" style="display: none;">
+                        </div>
+                        <div class="profile-item">
+                            <div class="profile-label">PERFIL</div>
+                            <div class="profile-value" id="profile-type">---</div>
+                            <input type="text" class="edit-input" id="edit-profile-type" style="display: none;">
+                        </div>
+                        <div class="profile-item">
+                            <div class="profile-label">NATUREZA</div>
+                            <div class="profile-value" id="profile-nature">---</div>
+                            <input type="text" class="edit-input" id="edit-profile-nature" style="display: none;">
+                        </div>
+                        <div class="profile-item">
+                            <div class="profile-label">MOTIVAÇÃO</div>
+                            <div class="profile-value" id="profile-motivation">---</div>
+                            <input type="text" class="edit-input" id="edit-profile-motivation" style="display: none;">
+                        </div>
+                        <div class="profile-item">
+                            <div class="profile-label">STATUS NA GUERRA</div>
+                            <div class="profile-value" id="profile-status">ATIVO</div>
+                        </div>
+                    </div>
+                    <div class="edit-buttons" id="profile-edit-buttons" style="display: none;">
+                        <button class="btn" id="save-profile-btn">SALVAR ALTERAÇÕES</button>
+                        <button class="btn" id="cancel-edit-btn">CANCELAR</button>
+                    </div>
+                </div>
+
+                <div class="profile-section">
+                    <h3 class="section-title">ATIVIDADE RECENTE</h3>
+                    <div class="profile-item">
+                        <div class="profile-value">Aguardando primeiro briefing de missão...</div>
+                    </div>
+                </div>
             </div>
 
             <div class="content-panel" id="servant-panel">
-                <!-- Conteúdo do servo -->
+                <div class="profile-section">
+                    <h3 class="section-title">DADOS DO SERVO</h3>
+                    <div class="profile-grid">
+                        <div class="profile-item">
+                            <div class="profile-label">CLASSE</div>
+                            <div class="profile-value" id="servant-class">---</div>
+                        </div>
+                        <div class="profile-item">
+                            <div class="profile-label">VERDADEIRO NOME</div>
+                            <div class="profile-value" id="servant-name">CLASSIFICADO</div>
+                        </div>
+                        <div class="profile-item">
+                            <div class="profile-label">ALINHAMENTO</div>
+                            <div class="profile-value" id="servant-alignment">---</div>
+                        </div>
+                        <div class="profile-item">
+                            <div class="profile-label">NÍVEL DE VÍNCULO</div>
+                            <div class="profile-value" id="servant-bond">INICIAL</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="profile-section">
+                    <h3 class="section-title">ATRIBUTOS</h3>
+                    <div class="servant-stats">
+                        <div class="stat-bar">
+                            <div class="stat-label">
+                                <span>SAÚDE</span>
+                                <span id="health-value">100%</span>
+                            </div>
+                            <div class="bar-container">
+                                <div class="bar-fill" id="health-bar" style="width: 100%"></div>
+                            </div>
+                        </div>
+                        <div class="stat-bar">
+                            <div class="stat-label">
+                                <span>MANA</span>
+                                <span id="mana-value">100%</span>
+                            </div>
+                            <div class="bar-container">
+                                <div class="bar-fill" id="mana-bar" style="width: 100%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="content-panel" id="war-panel">
-                <!-- Conteúdo da guerra -->
+                <div class="profile-section">
+                    <h3 class="section-title">STATUS DA GUERRA</h3>
+                    <div class="war-status">
+                        <div class="status-card">
+                            <div class="profile-label">FASE ATUAL</div>
+                            <div class="profile-value">PREPARAÇÃO</div>
+                        </div>
+                        <div class="status-card">
+                            <div class="profile-label">DIAS ATÉ O EVENTO</div>
+                            <div class="profile-value" id="days-until">3</div>
+                        </div>
+                        <div class="status-card">
+                            <div class="profile-label">PARTICIPANTES ATIVOS</div>
+                            <div class="profile-value">7</div>
+                        </div>
+                        <div class="status-card">
+                            <div class="profile-label">LOCALIZAÇÃO</div>
+                            <div class="profile-value">KUROGANE</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="profile-section">
+                    <h3 class="section-title">EVENTOS RECENTES</h3>
+                    <div class="profile-item">
+                        <div class="profile-value">Declaração de guerra confirmada. Sete Mestres convocados.</div>
+                    </div>
+                </div>
             </div>
 
             <div class="content-panel" id="quests-panel">
-                <!-- Conteúdo das missões -->
+                <div class="profile-section">
+                    <h3 class="section-title">SISTEMA DE MISSÕES</h3>
+                    
+                    <div class="quest-form">
+                        <h4 style="color: var(--accent); margin-bottom: 15px;">CRIAR NOVA MISSÃO</h4>
+                        <div class="form-group">
+                            <div class="profile-label">TÍTULO DA MISSÃO</div>
+                            <input type="text" class="form-input" id="quest-title" placeholder="Digite o título da missão">
+                        </div>
+                        <div class="form-group">
+                            <div class="profile-label">DESCRIÇÃO</div>
+                            <textarea class="form-input" id="quest-description" placeholder="Descreva os objetivos da missão" rows="3"></textarea>
+                        </div>
+                        <button class="btn" id="add-quest-btn">ADICIONAR MISSÃO</button>
+                    </div>
+                    
+                    <div class="quest-list" id="quest-list">
+                        <!-- As missões serão adicionadas aqui dinamicamente -->
+                    </div>
+                </div>
             </div>
 
             <div class="content-panel" id="messages-panel">
-                <!-- Conteúdo das mensagens -->
+                <div class="profile-section">
+                    <h3 class="section-title">COMUNICAÇÕES DO MESTRE</h3>
+                    <div class="profile-item">
+                        <div class="profile-label">MENSAGEM MAIS RECENTE</div>
+                        <div class="profile-value">Bem-vindo à Guerra do Santo Graal. Seu ritual de invocação do Servo está agendado para daqui a 3 dias no Rio Akagane. Prepare-se adequadamente.</div>
+                    </div>
+                </div>
             </div>
 
             <footer>
@@ -69,7 +212,22 @@
         </div>
     </div>
 
+    <!-- Scripts na ordem correta com carregamento seguro -->
     <script src="js/auth.js"></script>
-    <script src="js/hub.js"></script>
+    <script>
+        // Carrega o hub.js apenas quando o DOM estiver pronto
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 DOM carregado, iniciando hub...');
+            const script = document.createElement('script');
+            script.src = 'js/hub.js';
+            script.onload = function() {
+                console.log('✅ hub.js carregado com sucesso!');
+            };
+            script.onerror = function() {
+                console.error('❌ Erro ao carregar hub.js');
+            };
+            document.body.appendChild(script);
+        });
+    </script>
 </body>
 </html>
