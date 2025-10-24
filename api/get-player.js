@@ -4,7 +4,7 @@ const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri);
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
+  if (req.method !== "GET") {
     return res.status(405).json({ error: "Método não permitido" });
   }
 
@@ -13,21 +13,21 @@ export default async function handler(req, res) {
     const db = client.db("fate-grandwar");
     const players = db.collection("players");
 
-    const { id, name, level, score } = req.body;
+    const { id } = req.query;
 
-    if (!id || !name) {
-      return res.status(400).json({ error: "Campos obrigatórios ausentes" });
+    if (!id) {
+      return res.status(400).json({ error: "ID do jogador é obrigatório" });
     }
 
-    const result = await players.updateOne(
-      { id },
-      { $set: { name, level, score, updatedAt: new Date() } },
-      { upsert: true }
-    );
+    const player = await players.findOne({ id });
 
-    res.status(200).json({ message: "Jogador salvo com sucesso!", result });
+    if (!player) {
+      return res.status(404).json({ error: "Jogador não encontrado" });
+    }
+
+    res.status(200).json(player);
   } catch (err) {
-    console.error("Erro ao salvar jogador:", err);
+    console.error("Erro ao buscar jogador:", err);
     res.status(500).json({ error: "Erro interno do servidor" });
   } finally {
     await client.close();
