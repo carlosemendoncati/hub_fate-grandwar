@@ -2,12 +2,12 @@
   "version": 2,
   "functions": {
     "api/**/*.js": {
-      "runtime": "nodejs20.x",  // Atualizado para Node 20
-      "maxDuration": 10  // Limite de tempo para funções
+      "runtime": "nodejs20.x",
+      "maxDuration": 10
     }
   },
   "env": {
-    "MONGODB_URI": "@mongo_uri",  // Mantido, mas considere usar Vercel Secrets para mais segurança
+    "MONGODB_URI": "@mongo_uri",
     "NODE_ENV": "production"
   },
   "headers": [
@@ -35,7 +35,6 @@
           "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:;"
         },
         {
-          "key": "Referrer-Policy",
           "value": "strict-origin-when-cross-origin"
         },
         {
@@ -53,7 +52,7 @@
         },
         {
           "key": "Access-Control-Allow-Origin",
-          "value": "*"  // Ajuste para domínios específicos em produção
+          "value": "*"
         },
         {
           "key": "Access-Control-Allow-Methods",
@@ -81,5 +80,5 @@
   ],
   "buildCommand": "npm run build",
   "outputDirectory": "public",
-  "framework": null  // Serverless custom
+  "framework": null
 }
