@@ -17,7 +17,12 @@
         <div id="login-screen">
             <h2 class="login-title">FATE/GREAT WAR</h2>
             <p class="login-subtitle">ACESSO AO HUB DE PERSONAGEM</p>
-            <input type="text" class="code-input" id="code-input" placeholder="DIGITE O CÓDIGO (ex: FG-XXXXX)">
+            <input type="text" 
+                   class="code-input" 
+                   id="code-input" 
+                   placeholder="DIGITE O CÓDIGO (ex: FG-XXXXX)"
+                   title="Digite seu código de acesso"
+                   aria-label="Código de acesso do jogador">
             <button class="login-btn" id="login-btn">AUTENTICAR</button>
             <p class="subtitle" style="margin-top: 20px;">Use o código do seu convite do terminal</p>
         </div>
@@ -52,27 +57,57 @@
                         <div class="profile-item">
                             <div class="profile-label">NOME</div>
                             <div class="profile-value" id="profile-name">---</div>
-                            <input type="text" class="edit-input" id="edit-profile-name" style="display: none;">
+                            <input type="text" 
+                                   class="edit-input" 
+                                   id="edit-profile-name" 
+                                   title="Editar nome do jogador"
+                                   placeholder="Digite seu nome"
+                                   aria-label="Editar nome do jogador"
+                                   style="display: none;">
                         </div>
                         <div class="profile-item">
                             <div class="profile-label">ORIGEM</div>
                             <div class="profile-value" id="profile-origin">---</div>
-                            <input type="text" class="edit-input" id="edit-profile-origin" style="display: none;">
+                            <input type="text" 
+                                   class="edit-input" 
+                                   id="edit-profile-origin" 
+                                   title="Editar origem do jogador"
+                                   placeholder="Digite sua origem"
+                                   aria-label="Editar origem do jogador"
+                                   style="display: none;">
                         </div>
                         <div class="profile-item">
                             <div class="profile-label">PERFIL</div>
                             <div class="profile-value" id="profile-type">---</div>
-                            <input type="text" class="edit-input" id="edit-profile-type" style="display: none;">
+                            <input type="text" 
+                                   class="edit-input" 
+                                   id="edit-profile-type" 
+                                   title="Editar perfil do jogador"
+                                   placeholder="Digite seu perfil"
+                                   aria-label="Editar perfil do jogador"
+                                   style="display: none;">
                         </div>
                         <div class="profile-item">
                             <div class="profile-label">NATUREZA</div>
                             <div class="profile-value" id="profile-nature">---</div>
-                            <input type="text" class="edit-input" id="edit-profile-nature" style="display: none;">
+                            <input type="text" 
+                                   class="edit-input" 
+                                   id="edit-profile-nature" 
+                                   title="Editar natureza do jogador"
+                                   placeholder="Digite sua natureza"
+                                   aria-label="Editar natureza do jogador"
+                                   style="display: none;">
                         </div>
                         <div class="profile-item">
                             <div class="profile-label">MOTIVAÇÃO</div>
                             <div class="profile-value" id="profile-motivation">---</div>
-                            <input type="text" class="edit-input" id="edit-profile-motivation" style="display: none;">
+                            <input type="text" 
+                                   class="edit-input" 
+                                   id="edit-profile-motivation" 
+                                   title="Editar motivação do jogador"
+                                   placeholder="Digite sua motivação"
+                                   aria-label="Editar motivação do jogador"
+                                   style="display: none;">
                         </div>
                         <div class="profile-item">
                             <div class="profile-label">STATUS NA GUERRA</div>
@@ -180,11 +215,21 @@
                         <h4 style="color: var(--accent); margin-bottom: 15px;">CRIAR NOVA MISSÃO</h4>
                         <div class="form-group">
                             <div class="profile-label">TÍTULO DA MISSÃO</div>
-                            <input type="text" class="form-input" id="quest-title" placeholder="Digite o título da missão">
+                            <input type="text" 
+                                   class="form-input" 
+                                   id="quest-title" 
+                                   placeholder="Digite o título da missão"
+                                   title="Título da missão"
+                                   aria-label="Título da missão">
                         </div>
                         <div class="form-group">
                             <div class="profile-label">DESCRIÇÃO</div>
-                            <textarea class="form-input" id="quest-description" placeholder="Descreva os objetivos da missão" rows="3"></textarea>
+                            <textarea class="form-input" 
+                                      id="quest-description" 
+                                      placeholder="Descreva os objetivos da missão" 
+                                      rows="3"
+                                      title="Descrição da missão"
+                                      aria-label="Descrição da missão"></textarea>
                         </div>
                         <button class="btn" id="add-quest-btn">ADICIONAR MISSÃO</button>
                     </div>
@@ -212,20 +257,16 @@
         </div>
     </div>
 
-    <!-- Scripts na ordem correta com carregamento seguro -->
+    <!-- Elemento para anunciar mudanças para leitores de tela -->
+    <div id="aria-announcer" aria-live="polite" aria-atomic="true" style="position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden;"></div>
+
+    <!-- Scripts -->
     <script src="js/auth.js"></script>
     <script>
-        // Carrega o hub.js apenas quando o DOM estiver pronto
+        // Carrega hub.js após o DOM estar pronto
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 DOM carregado, iniciando hub...');
             const script = document.createElement('script');
             script.src = 'js/hub.js';
-            script.onload = function() {
-                console.log('✅ hub.js carregado com sucesso!');
-            };
-            script.onerror = function() {
-                console.error('❌ Erro ao carregar hub.js');
-            };
             document.body.appendChild(script);
         });
     </script>
